@@ -8,8 +8,10 @@ pub fn main() {
     let (prog, preproc) = guest::preprocess_correct_factors();
     let (output, proof) = guest::prove_correct_factors(prog, preproc.clone(), p, a, b);
 
-    println!("proof.proof.program_io.inputs: {:?}", &proof.proof.program_io.inputs);
-    println!("proof.proof.program_io.outputs: {:?}", &proof.proof.program_io.outputs);
+    let (proof_p, proof_a, proof_b): (i32, i32, i32) = postcard::from_bytes(&proof.proof.program_io.inputs).unwrap();
+    let proof_output: bool = postcard::from_bytes(&proof.proof.program_io.outputs).unwrap();
+    println!("(proof_p, proof_a, proof_b): {:?}", (proof_p, proof_a, proof_b));
+    println!("proof_output: {:?}", proof_output);
 
     // Transmit the proof to the verifier
     // ...
