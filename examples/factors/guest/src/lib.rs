@@ -2,6 +2,6 @@
 #![no_main]
 
 #[jolt::provable]
-fn correct_factors(p: i32, a: i32, b: i32) -> bool {
+fn correct_factors(p: i32, #[private] a: i32, #[private] b: i32) -> bool {
     p == a * b
 }

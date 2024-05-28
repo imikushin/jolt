@@ -3,20 +3,21 @@
 extern crate proc_macro;
 
 use core::panic;
+use proc_macro::TokenStream;
 use std::collections::HashMap;
+
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
+use syn::{
+    AttributeArgs, Ident, ItemFn, Lit, Meta, MetaNameValue, NestedMeta, parse_macro_input, PatType,
+    ReturnType, Type,
+};
 
 use common::{
     constants::{
         DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE,
     },
     rv_trace::MemoryLayout,
-};
-use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
-use syn::{
-    parse_macro_input, AttributeArgs, Ident, ItemFn, Lit, Meta, MetaNameValue, NestedMeta, PatType,
-    ReturnType, Type,
 };
 
 #[proc_macro_attribute]
@@ -35,11 +36,12 @@ struct MacroBuilder {
 
 impl MacroBuilder {
     fn new(attr: AttributeArgs, func: ItemFn) -> Self {
+        let func = strip_private_arg_attr(func);
         let func_args = Self::get_func_args(&func);
         #[cfg(feature = "guest-std")]
-        let std = true;
+            let std = true;
         #[cfg(not(feature = "guest-std"))]
-        let std = false;
+            let std = false;
 
         Self {
             attr,
@@ -522,6 +524,38 @@ impl MacroBuilder {
 
     fn get_func_selector(&self) -> Option<String> {
         proc_macro::tracked_env::var("JOLT_FUNC_NAME").ok()
+    }
+}
+
+fn strip_private_arg_attr(func: ItemFn) -> ItemFn {
+    let inputs = func
+        .sig
+        .inputs
+        .iter()
+        .map(strip_private_attr)
+        .collect();
+    ItemFn {
+        sig: syn::Signature {
+            inputs,
+            ..func.sig
+        },
+        ..func
+    }
+}
+
+fn strip_private_attr(arg: &syn::FnArg) -> syn::FnArg {
+    match arg {
+        syn::FnArg::Typed(ref pat_type @ PatType { ref attrs, .. }) => {
+            let attrs = attrs
+                .iter()
+                .filter(|attr| {
+                    !attr.path.is_ident("private")
+                })
+                .cloned()
+                .collect();
+            syn::FnArg::Typed(PatType { attrs, ..pat_type.clone() })
+        }
+        _ => arg.clone(),
     }
 }
 
