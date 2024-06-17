@@ -1,4 +1,4 @@
-use jolt_sdk::{RV32IJoltVM, Jolt};
+use jolt_sdk::{Jolt, RV32IJoltVM};
 
 pub fn main() {
     let p = 15;
@@ -8,9 +8,13 @@ pub fn main() {
     let (prog, preproc) = guest::preprocess_correct_factors();
     let (output, proof) = guest::prove_correct_factors(prog, preproc.clone(), p, a, b);
 
-    let (proof_p, proof_a, proof_b): (i32, i32, i32) = postcard::from_bytes(&proof.proof.program_io.inputs).unwrap();
+    let (proof_p, proof_a, proof_b): (i32, i32, i32) =
+        postcard::from_bytes(&proof.proof.program_io.inputs).unwrap();
     let proof_output: bool = postcard::from_bytes(&proof.proof.program_io.outputs).unwrap();
-    println!("(proof_p, proof_a, proof_b): {:?}", (proof_p, proof_a, proof_b));
+    println!(
+        "(proof_p, proof_a, proof_b): {:?}",
+        (proof_p, proof_a, proof_b)
+    );
     println!("proof_output: {:?}", proof_output);
 
     // Transmit the proof to the verifier
