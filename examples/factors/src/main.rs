@@ -8,6 +8,7 @@ pub fn main() {
     let (prog, preproc) = guest::preprocess_correct_factors();
     let (output, proof) = guest::prove_correct_factors(prog, preproc.clone(), p, a, b);
 
+    // we shouldn't be able to access a and b: they are private
     let (proof_p, proof_a, proof_b): (i32, i32, i32) =
         postcard::from_bytes(&proof.proof.program_io.inputs).unwrap();
     let proof_output: bool = postcard::from_bytes(&proof.proof.program_io.outputs).unwrap();
